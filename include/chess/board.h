@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <cstdint>
 #include <vector>
 #include "chess/move.h"
 
@@ -8,6 +9,7 @@ public:
     Board();
     [[nodiscard]] Piece at(int row, int col) const;
     [[nodiscard]] ColorSide side_to_move() const noexcept { return side_to_move_; }
+    [[nodiscard]] std::uint64_t position_key() const noexcept;
     [[nodiscard]] std::vector<Move> legal_moves() const;
     [[nodiscard]] std::vector<Move> legal_moves_from(int row, int col) const;
     [[nodiscard]] bool is_checkmate() const;
@@ -16,6 +18,7 @@ public:
     [[nodiscard]] bool apply_move(const Move& move);
     void reset();
 private:
+    friend class ChessEngine;
     // Generate candidates first, then reject moves that leave the moving king in check.
     std::array<Piece, 64> squares_{};
     ColorSide side_to_move_{ColorSide::White};

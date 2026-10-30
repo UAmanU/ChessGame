@@ -10,6 +10,30 @@ Board::Board() { reset(); }
 bool Board::inside(int row, int col) { return row >= 0 && row < 8 && col >= 0 && col < 8; }
 Piece Board::at(int row, int col) const { return inside(row, col) ? squares_[row * 8 + col] : Piece{}; }
 
+std::uint64_t Board::position_key() const noexcept {
+    // FNV-1a over pieces and all move-right state that changes legal moves.
+    std::uint64_t key = 14695981039346656037ULL;
+    const auto add_byte = [&key](std::uint8_t value) {
+        key ^= value;
+        key *= 1099511628211ULL;
+    };
+    for (const Piece piece : squares_) {
+        add_byte(static_cast<std::uint8_t>(piece.type));
+        add_byte(static_cast<std::uint8_t>(piece.side));
+    }
+    add_byte(static_cast<std::uint8_t>(side_to_move_));
+    const std::uint8_t castling_rights = static_cast<std::uint8_t>(
+        (!white_king_moved_ ? 1 : 0) |
+        (!black_king_moved_ ? 2 : 0) |
+        (!white_rook_a_moved_ ? 4 : 0) |
+        (!white_rook_h_moved_ ? 8 : 0) |
+        (!black_rook_a_moved_ ? 16 : 0) |
+        (!black_rook_h_moved_ ? 32 : 0));
+    add_byte(castling_rights);
+    add_byte(static_cast<std::uint8_t>(en_passant_square_ + 1));
+    return key;
+}
+
 void Board::reset() {
     squares_.fill(Piece{});
     constexpr PieceType back[] = {PieceType::Rook, PieceType::Knight, PieceType::Bishop, PieceType::Queen, PieceType::King, PieceType::Bishop, PieceType::Knight, PieceType::Rook};
@@ -98,12 +122,16 @@ bool Board::apply_unchecked(const Move& m) {
     if (moving.type == PieceType::Pawn && to == en_passant_square_ && captured.is_empty() && m.from_col != m.to_col) { int cap_row=m.to_row+(moving.side==ColorSide::White?1:-1); squares_[cap_row*8+m.to_col]=Piece{}; }
     if (moving.type == PieceType::King) (moving.side==ColorSide::White?white_king_moved_:black_king_moved_)=true;
     if (moving.type == PieceType::Rook) {
-        if (from==56) white_rook_a_moved_=true; if(from==63) white_rook_h_moved_=true;
-        if (from==0) black_rook_a_moved_=true; if(from==7) black_rook_h_moved_=true;
+        if (from == 56) white_rook_a_moved_ = true;
+        if (from == 63) white_rook_h_moved_ = true;
+        if (from == 0) black_rook_a_moved_ = true;
+        if (from == 7) black_rook_h_moved_ = true;
     }
     if (captured.type == PieceType::Rook) {
-        if(to==56) white_rook_a_moved_=true; if(to==63) white_rook_h_moved_=true;
-        if(to==0) black_rook_a_moved_=true; if(to==7) black_rook_h_moved_=true;
+        if (to == 56) white_rook_a_moved_ = true;
+        if (to == 63) white_rook_h_moved_ = true;
+        if (to == 0) black_rook_a_moved_ = true;
+        if (to == 7) black_rook_h_moved_ = true;
     }
     squares_[to]=moving; squares_[from]=Piece{};
     if (moving.type==PieceType::Pawn && (m.to_row==0 || m.to_row==7)) squares_[to].type=m.promotion;
