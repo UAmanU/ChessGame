@@ -6,6 +6,7 @@ namespace
     constexpr int LEFT = 60, TOP = 56, CELL = 75;
 }
 Game::Game() : engine_(3), renderer_(std::make_unique<GameRenderer>()) {}
+void Game::load_assets() { renderer_->load_assets(); }
 void Game::reset()
 {
     board_.reset();

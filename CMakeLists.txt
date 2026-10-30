@@ -16,9 +16,19 @@ target_include_directories(ChessGame PRIVATE include "${RAYLIB_INCLUDE_DIR}")
 target_link_libraries(ChessGame PRIVATE "${RAYLIB_LIBRARY}" winmm gdi32 opengl32)
 target_compile_options(ChessGame PRIVATE -Wall -Wextra -Wpedantic)
 set_target_properties(ChessGame PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+add_custom_command(TARGET ChessGame POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/resources"
+        "$<TARGET_FILE_DIR:ChessGame>/resources")
 
 if(BUILD_TESTING)
     add_executable(ChessLogicTests test/chess_logic_tests.cpp src/chess/board.cpp src/chess/engine.cpp)
     target_include_directories(ChessLogicTests PRIVATE include)
     add_test(NAME ChessLogicTests COMMAND ChessLogicTests)
+
+    add_executable(ChessFontAssetTests test/chess_font_asset_tests.cpp)
+    add_dependencies(ChessFontAssetTests ChessGame)
+    target_include_directories(ChessFontAssetTests PRIVATE include "${RAYLIB_INCLUDE_DIR}")
+    target_link_libraries(ChessFontAssetTests PRIVATE "${RAYLIB_LIBRARY}" winmm gdi32 opengl32)
+    add_test(NAME ChessFontAssetTests COMMAND ChessFontAssetTests)
 endif()

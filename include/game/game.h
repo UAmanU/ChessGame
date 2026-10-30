@@ -5,12 +5,15 @@
 #include "gui/game_renderer.h"
 #include <memory>
 #include <optional>
-class Game {
+class Game
+{
 public:
     Game();
-    void update(GameState& state, bool& player_won, bool& draw);
+    void load_assets();
+    void update(GameState &state, bool &player_won, bool &draw);
     void draw() const;
     void reset();
+
 private:
     Board board_;
     ChessEngine engine_;

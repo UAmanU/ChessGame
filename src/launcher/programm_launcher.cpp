@@ -3,20 +3,36 @@
 #include "config/colors_settings.h"
 #include "config/window_settings.h"
 
-ProgrammLauncher::ProgrammLauncher() : game_(std::make_unique<Game>()),menu_(std::make_unique<Menu>()) {}
-ProgrammLauncher::~ProgrammLauncher() { if(IsWindowReady()) CloseWindow(); }
-void ProgrammLauncher::start() {
-    InitWindow(config::window::WIDTH,config::window::HEIGHT,config::window::TITLE);
+ProgrammLauncher::ProgrammLauncher() : game_(std::make_unique<Game>()), menu_(std::make_unique<Menu>()) {}
+ProgrammLauncher::~ProgrammLauncher()
+{
+    // GPU resources must be released while the Raylib context still exists.
+    game_.reset();
+    menu_.reset();
+    if (IsWindowReady())
+        CloseWindow();
+}
+void ProgrammLauncher::start()
+{
+    InitWindow(config::window::WIDTH, config::window::HEIGHT, config::window::TITLE);
+    game_->load_assets();
     SetTargetFPS(config::window::TARGET_FPS);
-    while(!WindowShouldClose()&&game_state_!=GameState::Exit) {
-        if(game_state_==GameState::Menu) menu_->update(game_state_);
-        else if(game_state_==GameState::Playing) game_->update(game_state_,player_won_,draw_);
-        else if(game_state_==GameState::Result) menu_->update(game_state_,true,nullptr);
+    while (!WindowShouldClose() && game_state_ != GameState::Exit)
+    {
+        if (game_state_ == GameState::Menu)
+            menu_->update(game_state_);
+        else if (game_state_ == GameState::Playing)
+            game_->update(game_state_, player_won_, draw_);
+        else if (game_state_ == GameState::Result)
+            menu_->update(game_state_, true, nullptr);
         BeginDrawing();
         ClearBackground(config::colors::BACKGROUND);
-        if(game_state_==GameState::Menu) menu_->draw();
-        else if(game_state_==GameState::Playing) game_->draw();
-        else if(game_state_==GameState::Result) menu_->draw(true,draw_?config::menu::DRAW_MESSAGE:(player_won_?config::menu::WIN_MESSAGE:config::menu::LOSE_MESSAGE));
+        if (game_state_ == GameState::Menu)
+            menu_->draw();
+        else if (game_state_ == GameState::Playing)
+            game_->draw();
+        else if (game_state_ == GameState::Result)
+            menu_->draw(true, draw_ ? config::menu::DRAW_MESSAGE : (player_won_ ? config::menu::WIN_MESSAGE : config::menu::LOSE_MESSAGE));
         EndDrawing();
     }
 }
