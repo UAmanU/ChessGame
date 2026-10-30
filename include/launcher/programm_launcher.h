@@ -2,11 +2,13 @@
 #include "game/game.h"
 #include "menu/menu.h"
 #include <memory>
-class ProgrammLauncher {
+class ProgrammLauncher
+{
 public:
     ProgrammLauncher();
     ~ProgrammLauncher();
     void start();
+
 private:
     std::unique_ptr<Game> game_;
     std::unique_ptr<Menu> menu_;
