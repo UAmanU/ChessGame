@@ -12,6 +12,7 @@ void Game::reset()
     board_.reset();
     selected_square_ = -1;
     selected_moves_.clear();
+    move_history_.clear();
     thinking_ = false;
 }
 void Game::draw() const { renderer_->draw(board_, selected_square_, selected_moves_, thinking_); }
@@ -41,9 +42,8 @@ void Game::update(GameState &state, bool &player_won, bool &draw)
         }
         if (GetTime() - ai_started_at_ < 0.12)
             return;
-        auto move = engine_.find_best_move(board_);
-        if (move)
-            (void)board_.apply_move(*move);
+        auto move = engine_.find_best_move(board_, move_history_);
+        if (move && board_.apply_move(*move)) move_history_.push_back(*move);
         thinking_ = false;
         return;
     }
@@ -61,7 +61,7 @@ void Game::update(GameState &state, bool &player_won, bool &draw)
         for (const auto &move : selected_moves_)
             if (move.to_row == row && move.to_col == col)
             {
-                (void)board_.apply_move(move);
+                if (board_.apply_move(move)) move_history_.push_back(move);
                 selected_square_ = -1;
                 selected_moves_.clear();
                 return;

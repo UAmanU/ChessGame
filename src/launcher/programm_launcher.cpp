@@ -20,7 +20,10 @@ void ProgrammLauncher::start()
     while (!WindowShouldClose() && game_state_ != GameState::Exit)
     {
         if (game_state_ == GameState::Menu)
+        {
             menu_->update(game_state_);
+            if (game_state_ == GameState::Playing) game_->reset();
+        }
         else if (game_state_ == GameState::Playing)
             game_->update(game_state_, player_won_, draw_);
         else if (game_state_ == GameState::Result)

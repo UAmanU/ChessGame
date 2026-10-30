@@ -1,11 +1,12 @@
 #pragma once
 #include "chess/board.h"
 #include <optional>
+#include <vector>
 
 class ChessEngine {
 public:
     explicit ChessEngine(int depth = 3) : depth_(depth) {}
-    [[nodiscard]] std::optional<Move> find_best_move(const Board& board) const;
+    [[nodiscard]] std::optional<Move> find_best_move(const Board& board, const std::vector<Move>& move_history = {}) const;
 private:
     int depth_;
     // White maximizes the material score and Black minimizes it; alpha-beta prunes branches.

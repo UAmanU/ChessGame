@@ -1,4 +1,5 @@
 #include "chess/engine.h"
+#include "chess/opening_book.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -25,15 +26,61 @@ namespace {
     }
 }
 int ChessEngine::evaluate(const Board& board) {
-    int score=0;
-    for(int r=0;r<8;++r) for(int c=0;c<8;++c) { Piece p=board.at(r,c); int position= (p.type==PieceType::Pawn ? (p.side==ColorSide::White ? 6-r : r-1)*3 : (3-std::abs(3-c))*2); int v=value(p.type)+position; score += p.is_empty()?0:(p.side==ColorSide::White?v:-v); }
+    int score = 0;
+    int undeveloped_phase_pieces = 0;
+    for (int row = 0; row < 8; ++row) for (int col = 0; col < 8; ++col) {
+        const Piece piece = board.at(row, col);
+        if (!piece.is_empty() && piece.type != PieceType::Pawn && piece.type != PieceType::King) ++undeveloped_phase_pieces;
+    }
+    const bool opening_phase = undeveloped_phase_pieces >= 10;
+
+    for (int row = 0; row < 8; ++row) for (int col = 0; col < 8; ++col) {
+        const Piece piece = board.at(row, col);
+        if (piece.is_empty()) continue;
+
+        const int sign = piece.side == ColorSide::White ? 1 : -1;
+        const int home_row = piece.side == ColorSide::White ? 7 : 0;
+        const int pawn_progress = piece.side == ColorSide::White ? 6 - row : row - 1;
+        int positional_score = 0;
+
+        if (piece.type == PieceType::Pawn) {
+            // Pawn progress is useful, but must not make a needless edge-pawn push look best.
+            positional_score += pawn_progress * 2;
+            if (col == 3 || col == 4) positional_score += 10;
+            if ((row == 3 || row == 4) && (col == 3 || col == 4)) positional_score += 16;
+            if ((col == 0 || col == 7) && pawn_progress > 0) positional_score -= pawn_progress * 8;
+        } else if (piece.type == PieceType::Knight) {
+            const int center_distance = std::abs(3 - row) + std::abs(3 - col);
+            positional_score += std::max(0, 12 - center_distance * 2);
+            if (opening_phase && row == home_row && (col == 1 || col == 6)) positional_score -= 18;
+        } else if (piece.type == PieceType::Bishop && opening_phase && row == home_row && (col == 2 || col == 5)) {
+            positional_score -= 16;
+        } else if (piece.type == PieceType::King && opening_phase) {
+            if (row == home_row && (col == 2 || col == 6)) positional_score += 28;
+            else if (row == home_row && col == 4) positional_score -= 8;
+        }
+
+        score += sign * (value(piece.type) + positional_score);
+    }
     return score;
 }
-std::optional<Move> ChessEngine::find_best_move(const Board& board) const {
+std::optional<Move> ChessEngine::find_best_move(const Board& board, const std::vector<Move>& move_history) const {
     auto moves=board.legal_moves(); if(moves.empty()) return std::nullopt;
+    if (const auto book_move = OpeningBook::find_move(move_history, moves)) return book_move;
     order_moves(board, moves);
-    bool maximizing=board.side_to_move()==ColorSide::White; int best=maximizing?std::numeric_limits<int>::min():std::numeric_limits<int>::max(); std::optional<Move> best_move;
-    for(const auto& move:moves) { Board next=board; (void)next.apply_move(move); int score=search(next,depth_-1,std::numeric_limits<int>::min()+1,std::numeric_limits<int>::max(),1); if((maximizing&&score>best)||(!maximizing&&score<best)){best=score;best_move=move;} }
+    const bool maximizing=board.side_to_move()==ColorSide::White;
+    int alpha=std::numeric_limits<int>::min()+1;
+    int beta=std::numeric_limits<int>::max();
+    int best=maximizing?alpha:beta;
+    std::optional<Move> best_move;
+    for(const auto& move:moves) {
+        Board next=board;
+        (void)next.apply_move(move);
+        const int score=search(next,depth_-1,alpha,beta,1);
+        if((maximizing&&score>best)||(!maximizing&&score<best)) { best=score; best_move=move; }
+        if(maximizing) alpha=std::max(alpha,best);
+        else beta=std::min(beta,best);
+    }
     return best_move;
 }
 int ChessEngine::search(Board& board,int depth,int alpha,int beta,int ply) const {

@@ -22,9 +22,9 @@ add_custom_command(TARGET ChessGame POST_BUILD
         "$<TARGET_FILE_DIR:ChessGame>/resources")
 
 if(BUILD_TESTING)
-    add_executable(ChessLogicTests test/chess_logic_tests.cpp src/chess/board.cpp src/chess/engine.cpp)
-    target_include_directories(ChessLogicTests PRIVATE include)
-    add_test(NAME ChessLogicTests COMMAND ChessLogicTests)
+    add_executable(ChessOpeningRegressionTests test/chess_logic_tests.cpp src/chess/board.cpp src/chess/engine.cpp src/chess/opening_book.cpp)
+    target_include_directories(ChessOpeningRegressionTests PRIVATE include)
+    add_test(NAME ChessOpeningRegressionTests COMMAND ChessOpeningRegressionTests)
 
     add_executable(ChessFontAssetTests test/chess_font_asset_tests.cpp)
     add_dependencies(ChessFontAssetTests ChessGame)

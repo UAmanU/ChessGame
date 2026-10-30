@@ -20,6 +20,7 @@ private:
     std::unique_ptr<GameRenderer> renderer_;
     int selected_square_{-1};
     std::vector<Move> selected_moves_;
+    std::vector<Move> move_history_;
     bool thinking_{false};
     double ai_started_at_{0.0};
 };
