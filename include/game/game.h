@@ -5,6 +5,8 @@
 #include "gui/game_renderer.h"
 #include <memory>
 #include <optional>
+#include <future>
+#include <cstdint>
 class Game
 {
 public:
@@ -22,5 +24,6 @@ private:
     std::vector<Move> selected_moves_;
     std::vector<Move> move_history_;
     bool thinking_{false};
-    double ai_started_at_{0.0};
+    std::future<std::optional<Move>> ai_future_;
+    std::uint64_t ai_position_key_{0};
 };

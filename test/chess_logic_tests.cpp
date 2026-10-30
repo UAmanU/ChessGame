@@ -39,4 +39,26 @@ int main() {
     auto response = engine.find_best_move(board); // Exercise Minimax after the opening-book line.
     assert(response.has_value());
     assert(board.apply_move(*response));
+
+    // After 1. e4 d5 2. exd5 Qxd5, Nc3 attacks the exposed queen with tempo.
+    Board queen_tactic;
+    for (const Move move : std::vector<Move>{{6, 4, 4, 4}, {1, 3, 3, 3}, {4, 4, 3, 3}, {0, 3, 3, 3}}) {
+        assert(queen_tactic.apply_move(move));
+    }
+    ChessEngine tactical_engine(3);
+    const auto queen_attack = tactical_engine.find_best_move(queen_tactic);
+    assert(queen_attack.has_value());
+    assert(*queen_attack == (Move{7, 1, 5, 2}));
+
+    // The engine should recognize the immediate Fool's Mate rather than settle for material.
+    Board mate_in_one;
+    for (const Move move : std::vector<Move>{{6, 5, 5, 5}, {1, 4, 3, 4}, {6, 6, 4, 6}}) {
+        assert(mate_in_one.apply_move(move));
+    }
+    const auto mating_move = ChessEngine(2).find_best_move(mate_in_one);
+    assert(mating_move.has_value());
+    assert(*mating_move == (Move{0, 3, 4, 7}));
+    assert(mate_in_one.apply_move(*mating_move));
+    assert(mate_in_one.in_check(ColorSide::White));
+    assert(mate_in_one.legal_moves().empty());
 }
